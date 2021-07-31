@@ -38,6 +38,7 @@ module.exports = {
     if (command.aliases.length > 0) data.push(`**Aliases:** ${command.aliases.join(', ')}`);
     if (command.description) data.push(`**Description:** ${command.description}`);
     if (command.usage) data.push(`**Usage:**\n${command.usage}`);
+    if (command.example) data.push(`**Example:**\n${prefix}${command.example}`);
     message.channel.send(data, { split: true });
   },
 };

@@ -5,8 +5,7 @@ module.exports = {
   name: 'end_poll',
   description: 'End the linked poll and reply to the original message with the results.',
   example: '-w \\`Role Name\\` "The correct answer was :one:" https://discord.com/channels/748581308866887691/811643995755249664/870896674149662800',
-  aliases: ['ep', 'end_poll:w'
-  + ''],
+  aliases: ['ep', 'end_poll'],
   args: true,
   async execute(message) {
     const argsRegex = message.content.match(/(?:-w|-wr|-winner|-winner_role|-c|-cr|-correct|correct_role)\s`(?<roleToFind>.+?)`\s(?:(?<delim>'|"|`|\?#|<|{)(?<msg>.+?)\k<delim>)\s(?:https:\/\/discord\.com\/channels\/(?<guild>\d+?)\/(?<channel>\d+?)\/(?<msgId>\d+?))$/);
