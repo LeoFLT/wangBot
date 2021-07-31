@@ -42,29 +42,31 @@ module.exports = {
       {
         name: 'Reactions: Roles',
         value: emojiToRole,
-        inline: true
+        inline: true,
       },
       {
         name: 'Is active?',
         value: poll.is_ongoing,
-        inline: true
+        inline: true,
       },
       {
         name: 'Link',
         value: `https://discord.com/channels/${poll.guild.id}/${poll.sentMessage.channel.id}/${poll.sentMessage.id}`,
-        inline: false
+        inline: false,
       });
-      if ((index + 1) !== array.length)
+      if ((index + 1) !== array.length) {
         embedFields.push({
-        name: '\u200B',
-        value: '-----------------',
-        inline: false
-      });
+          name: '\u200B',
+          value: '-----------------',
+          inline: false,
+        });
+      }
     });
     const msgToSend = new MessageEmbed().setTitle(`Poll list for ${message.guild.name}`)
       .setDescription(queryActive || queryInactive
         ? `Showing only ${queryInactive ? 'in' : ''}active polls (${doc.length})` : 'Showing all polls')
-      .addFields(...embedFields);
+      .addFields(...embedFields)
+      .setColor('#ff6c6c');
     message.inlineReply(msgToSend);
   },
 };

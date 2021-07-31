@@ -40,7 +40,8 @@ module.exports = {
         name: doc.sentMessage.title,
         value: doc.sentMessage.content,
         inline: false,
-      });
+      })
+      .setColor('#ff6c6c');
 
     const messageTest = await message.inlineReply(msgToSend);
     await messageTest.react('✅');

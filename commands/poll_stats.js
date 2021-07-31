@@ -42,7 +42,7 @@ module.exports = {
     });
     doc.userReactions.forEach((v, k) => {
       const { role } = v;
-      roleEmbeds[role].playerList.push(`<@${k}>`);
+      roleEmbeds[role]?.playerList?.push(`<@${k}>`);
     });
 
     let isTruncated = false;
@@ -60,32 +60,8 @@ module.exports = {
         ((playerList.length / memberCount) * 100).toFixed(2)}%)`,
       playerList.length > 0 ? playerListStr : 'No members', true);
     }
+    msgToSend.setColor('#ff6c6c');
     if (isTruncated) msgToSend.addField('\u200B', 'Player counts truncated due to size');
     message.inlineReply(msgToSend);
-    /*  await messageTest.react('✅');
-     await messageTest.react('❌');
-     const collector = messageTest.createReactionCollector((reaction, rUser) => {
-     if (!reaction.me && (reaction.emoji.name === '✅' || reaction.emoji.name === '❌')) {
-     return rUser.id === message.author.id;
-     }
-     return false;
-     });
-
-     collector.on('collect', () => collector.stop());
-     collector.on('end', async (collected) => {
-     switch (collected.first().emoji.name) {
-     case '✅': {
-     doc.is_ongoing = setEnabled;
-     doc.save();
-     msgToSend.addField('Status', 'Success');
-     return messageTest.edit(msgToSend);
-     }
-     case '❌':
-     default:
-     msgToSend.addField('Status', 'Operation cancelled');
-     return messageTest.edit(msgToSend);
-     }
-     });
-     */
   },
 };

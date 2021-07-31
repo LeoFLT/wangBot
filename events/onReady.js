@@ -2,7 +2,7 @@ const ReactionListener = require('../models/Reaction');
 
 module.exports = {
   name: 'ready',
-  once: true,
+  once: false,
   async execute(client) {
     process.stdout.write(
       `\n${new Date()

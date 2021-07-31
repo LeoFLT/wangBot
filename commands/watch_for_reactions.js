@@ -76,8 +76,8 @@ module.exports = {
             (el) => el.name.toLowerCase() === currCmd.toLowerCase(),
           );
         }
-        argsObj.roleToPing.id = roleToPing.id;
-        argsObj.roleToPing.name = roleToPing.name;
+        argsObj.roleToPing.id = roleToPing?.id;
+        argsObj.roleToPing.name = roleToPing?.name;
       },
       dupes(param, msg) {
         const dupeBool = parseCmd(param, msg.content.replace(/`/g, ''), true);
@@ -212,16 +212,16 @@ module.exports = {
       switch (collected.first().emoji.name) {
         case '✅': {
           let strTest = argsObj.roleToPing.name === '@everyone' ? '@everyone, new survivor question:' : `<@&${argsObj.roleToPing.id}>, new survivor question:`;
-          if (!argsObj?.roleToPing?.id) strTest = 'New survivor question:'
+          if (!argsObj?.roleToPing?.id) strTest = 'New survivor question:';
           const finalMessage = await argsObj.message.channelToSend.send(strTest,
             new MessageEmbed()
               .setTitle(argsObj.message.title)
-              .setDescription(argsObj.message.content),
+              .setDescription(argsObj.message.content)
+              .setColor('#ff6c6c'),
             {
               split: true,
               allowedMentions: { parse: ['roles', 'users', 'everyone'] },
-            },
-          );
+            });
           const reactionListener = new ReactionListenerModel({
             id: finalMessage.id,
             guild: { name, id } = message.guild,

@@ -69,7 +69,8 @@ module.exports = {
         enablePool ? '<-d|-disable>' : '<-e|-enable>'}`)
       .addFields(...msgEmbeds)
       .setFooter('created at')
-      .setTimestamp(doc.date);
+      .setTimestamp(doc.date)
+      .setColor('#ff6c6c');
     const reactToMsg = await message.inlineReply(msgToSend);
 
     await reactToMsg.react('✅');
