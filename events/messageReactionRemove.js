@@ -30,7 +30,7 @@ module.exports = {
         messageQuery.author.user.tag}`);
 
       messageQuery.userReactions
-        .set(member.id, { role: roleToRemove.id, reaction: undefined });
+        .set(member.id, { role: undefined, reaction: undefined });
       await messageQuery.save();
     }
   },

@@ -11,7 +11,7 @@ module.exports = {
     const queryInactive = (args.length === 1 && args[0] === '-i') || false;
     let doc;
     try {
-      const filter = { guild: message.guild.id };
+      const filter = { 'guild.id': message.guild.id };
       if (queryActive) filter.is_ongoing = true;
       else if (queryInactive) filter.is_ongoing = false;
       doc = await ReactionListener.find(filter);
@@ -19,28 +19,52 @@ module.exports = {
       process.stdout.write(`\nError: ${e.message}\nStack: ${e.stack}\n`);
     }
     const embedFields = [];
-    for (const poll of doc) {
+
+    if (!doc) return message.reply('No polls made for this server');
+    doc.forEach((poll, index, array) => {
+      const emojiToRole = [];
+      poll.availableRoles.forEach((v, k) => emojiToRole.push(`${k}: <@&${v.id}>`));
       embedFields.push({
         name: 'Poll Author',
         value: `<@${poll.author.id}>`,
-        inline: false,
-      }, {
+        inline: true,
+      },
+      {
         name: 'Channel',
         value: `<#${poll.sentMessage.channel.id}>`,
         inline: true,
-      }, {
-        name: `[${poll.sentMessage.title}](https://discord.com/channels/${
-          poll.sentMessage.channel.guild.id}/${
-          poll.sentMessage.channel.id}/${
-          poll.sentMessage.id})`,
+      },
+      {
+        name: poll.sentMessage.title,
         value: poll.sentMessage.content,
         inline: false,
+      },
+      {
+        name: 'Reactions: Roles',
+        value: emojiToRole,
+        inline: true
+      },
+      {
+        name: 'Is active?',
+        value: poll.is_ongoing,
+        inline: true
+      },
+      {
+        name: 'Link',
+        value: `https://discord.com/channels/${poll.guild.id}/${poll.sentMessage.channel.id}/${poll.sentMessage.id}`,
+        inline: false
       });
-    }
+      if ((index + 1) !== array.length)
+        embedFields.push({
+        name: '\u200B',
+        value: '-----------------',
+        inline: false
+      });
+    });
     const msgToSend = new MessageEmbed().setTitle(`Poll list for ${message.guild.name}`)
       .setDescription(queryActive || queryInactive
-        ? `Showing only ${queryInactive ? 'in' : ''}active polls${doc.length}` : 'Showing all polls')
+        ? `Showing only ${queryInactive ? 'in' : ''}active polls (${doc.length})` : 'Showing all polls')
       .addFields(...embedFields);
-    message.channel.send(msgToSend, { disableMentions: 'none', split: true });
+    message.inlineReply(msgToSend);
   },
 };

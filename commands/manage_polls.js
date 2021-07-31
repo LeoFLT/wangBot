@@ -57,7 +57,7 @@ module.exports = {
       switch (collected.first().emoji.name) {
         case '✅': {
           doc.is_ongoing = setEnabled;
-          doc.save().then(console.log);
+          doc.save();
           msgToSend.addField('Status', 'Success');
           return messageTest.edit(msgToSend);
         }
