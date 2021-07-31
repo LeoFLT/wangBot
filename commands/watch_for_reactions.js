@@ -211,11 +211,9 @@ module.exports = {
     collector.on('end', async (collected) => {
       switch (collected.first().emoji.name) {
         case '✅': {
-          const strTest = argsObj?.roleToPing?.name === '@everyone' ? '@everyone' : argsObj?.roleToPing.id;
-          const finalMessage = await argsObj.message.channelToSend.send(
-            `${strTest === '@everyone' ? `${strTest}, n`
-              : `${!argsObj.roleToPing.id}` ? 'N'
-                : `<@&${strTest}>, n`}ew survivor question:`,
+          let strTest = argsObj.roleToPing.name === '@everyone' ? '@everyone, new survivor question:' : `<@&${argsObj.roleToPing.id}>, new survivor question:`;
+          if (!argsObj?.roleToPing?.id) strTest = 'New survivor question:'
+          const finalMessage = await argsObj.message.channelToSend.send(strTest,
             new MessageEmbed()
               .setTitle(argsObj.message.title)
               .setDescription(argsObj.message.content),
