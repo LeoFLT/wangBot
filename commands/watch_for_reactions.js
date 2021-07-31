@@ -1,174 +1,203 @@
-const { MessageEmbed } = require("discord.js");
-const ReactionListener = require("../models/reaction_listener.js");
+const { MessageEmbed } = require('discord.js');
+const ReactionListenerModel = require('../models/Reaction');
+const { parseCmd } = require('../functions');
+const { RoleList } = require('../classes');
 
 module.exports = {
-  name: "watch_for_reactions",
-  description: "Listen to reactions to a message and assign roles based on it",
-  aliases: ["wr", "wfr", "watch_reactions"],
+  name: 'watch_for_reactions',
+  description: 'Listen to reactions to a message and assign roles based on it',
+  aliases: ['wr', 'wfr', 'watch_reactions'],
   args: true,
   usesDb: true,
   takesParameters: true,
   usage:
-    "```\n.wr <#channel> -<title|t> `<question title>` -<ping|p> `<role to ping>` -<dupes|d> <allow users to claim multiple roles (true|false)> {<message content>} -<roles|r> <key value pairs corresponding to emojis and roles to assign>¹\n¹: roles must be inside ticks (`)```\nExample: ```\n.wr #announcements -t `Question 1: Bla bla` -p `Survivor` -d false\n{\nQuestion one\nParagraph Two\nParagraph three\n}\n:one: -r `Role One` :two: `Role Two` ```\n",
-  async execute(message, _, parseCmd, db) {
-    if (!message.member.hasPermission("ADMINISTRATOR")) return;
-    // replace escaped block delimiters
-    let argsObj = {
-      channelToSend: undefined,
+    '"<Message to send>" -<channel|c> <#channel> -<title|t> \\`<question title>\\` -<ping|p> \\`<role to ping>\\`¹²'
+    + ' -<dupes|d> <allow users to claim multiple roles (true|false)>² "<message content>"'
+    + ' -<roles|r> <key value pairs corresponding to \\:emojis\\: and \\`roles\\` to assign>³*\n'
+    + '¹: argument must be enclosed in ticks\n'
+    + '²: optional\n'
+    + '³: roles must be enclosed in ticks\n'
+    + '*: must be the last parameter used',
+  example:
+    '"My cool, Multiline and rich :money: text. Use ?# as a delimiter '
+    + 'if you need special characters,\notherwise use one single or double quotes/single '
+    + 'or triple ticks, or one of these templates:\n`< message <` `> message >` `{ message {` `} message }`.\nNote how everything up until now is still inside the message to send parameter."\n-c #announcements -t '
+    + '`Question 1: Question title here` -p `Role To Ping` -d false '
+    + '-r :one: `Role One` :two: `Role Two` :three: `Role Three`\n',
+  async execute(message) {
+    if (!message.member.hasPermission('ADMINISTRATOR')) return;
+    const messageStr = message.content.trim().split(/\s+/);
+    const parserRegex = new RegExp(
+      `^${messageStr[0]} (?<delim>\\?#|\`\`\`|\`\`|[\`"'<>\\[\\]\\{\\}])(?<parserMsg>.*?)\\k<delim>`,
+      'su',
+    );
+
+    const messageBodyMatches = message.content.match(parserRegex);
+    if (!messageBodyMatches) return message.inlineReply('Wrongly formatted message body');
+
+    const parsedMsg = messageBodyMatches.groups.parserMsg.trim();
+    if (!parsedMsg) return message.inlineReply('Message body cannot be empty');
+    messageStr.shift();
+
+    const argsObj = {
       message: {
         author: {
           id: message.member.user.id,
           tag: message.member.user.tag,
         },
         title: undefined,
-        content: undefined,
+        content: parsedMsg,
+        channelToSend: undefined,
       },
-      pingRole: undefined,
+      roleToPing: { id: undefined, name: 'None' },
       allowDupes: false,
-      rolesToClaim: [],
+      availableRoles: new RoleList(),
     };
-    const cmdRegex = /(-\w+)\s*/gi;
-    const paramList = [];
-    [...message.content.matchAll(cmdRegex)].forEach((match) =>
-      match[1] ? paramList.push(match[1]) : undefined
-    );
-    for (const param of paramList) {
-      let currCmd;
-      if (param === "-c" || param === "-channel") {
-        const startIndex =
-          message.content.indexOf(`${param} <#`) + param.length + 1;
-        const endIndex = message.content.indexOf(">", startIndex) + 1;
-        currCmd = message.content
+    const Arguments = {
+      channel(param, msg) {
+        const startIndex = msg.content.indexOf(`${param} <#`) + param.length + 1;
+        const endIndex = msg.content.indexOf('>', startIndex) + 1;
+        const channelId = msg.content
           .slice(startIndex, endIndex)
-          .replace(/[<#>]/g, "");
-      } else if (param === "-dupes" || param === "-d") {
-        currCmd = parseCmd(param, message.content.replace(/`/g, ""), true);
-      } else if (param === "-r" || param === "-roles") {
-        const startIndex = message.content.indexOf(param);
-        currCmd = message.content.slice(startIndex);
-        const roleRegExpTest =
-          /(?<reaction>\S+|<:([\w\s\d]+):\d+>)\s`(?<roleName>[\w\s\d]+)`/g;
-        let resArr = Array.from(currCmd.matchAll(roleRegExpTest)).map((el) => ({
+          .replace(/[<#>]/g, '');
+        argsObj.message.channelToSend = msg.guild.channels.cache.find(
+          (ch) => ch.id === channelId,
+        );
+      },
+      title(param, msg) {
+        argsObj.message.title = parseCmd(param, msg.content);
+      },
+      ping(param, msg) {
+        const currCmd = parseCmd(param, msg.content);
+        let roleToPing;
+        if (currCmd.toLowerCase() === 'everyone') roleToPing = message.guild.roles.everyone;
+        else {
+          roleToPing = msg.guild.roles.cache.find(
+            (el) => el.name.toLowerCase() === currCmd.toLowerCase(),
+          );
+        }
+        argsObj.roleToPing.id = roleToPing.id;
+        argsObj.roleToPing.name = roleToPing.name;
+      },
+      dupes(param, msg) {
+        const dupeBool = parseCmd(param, msg.content.replace(/`/g, ''), true);
+        argsObj.allowDupes = dupeBool || false;
+      },
+      roles(param, msg) {
+        const startIndex = msg.content.indexOf(`-${param}`);
+        let currCmd = msg.content.slice(startIndex);
+        const roleRegExpTest = /(?<reaction>\S+|<:([\w\s\d]+):\d+>)\s`(?<roleName>[\w\s\d]+)`/g;
+        currCmd = Array.from(currCmd.matchAll(roleRegExpTest)).map((el) => ({
           ...el.groups,
         }));
-        currCmd = resArr;
-      } else currCmd = parseCmd(param, message.content);
+        let roleCount = 0;
+        currCmd.forEach((rolePair) => {
+          if (rolePair?.reaction && rolePair?.roleName) {
+            const roleQuery = message.guild.roles.cache.find((r) => r.name === rolePair.roleName);
+            if (!roleQuery) return;
+            argsObj
+              .availableRoles
+              .set(rolePair.reaction, { id: roleQuery.id, name: roleQuery.name });
+            roleCount++;
+          }
+        });
+        if (roleCount > 0) return true;
+      },
+    };
+    for (const command in Arguments) {
+      Arguments[command.slice(0, 1)] = Arguments[command];
+    }
 
+    const cmdRegex = /(-\w+)\s*/gi;
+    const paramList = [];
+    [...message.content.matchAll(cmdRegex)]
+      .forEach((match) => (match[1] ? paramList.push(match[1]) : undefined));
+    // eslint-disable-next-line no-restricted-syntax
+    for (const param of paramList) {
+      const cmdToFind = param.slice(1);
       try {
-        if (param === "-title" || param === "-t")
-          argsObj.message.title = currCmd;
-        if (param === "-ping" || param === "-p") {
-          const roleToPing = message.guild.roles.cache.find(
-            (el) => el.name.toLowerCase() === currCmd.toLowerCase()
-          );
-          argsObj.pingRole = { id, name } = roleToPing;
-        }
-        if (param === "-dupes" || param === "-d") argsObj.allowDupes = currCmd;
-        if (param === "-r" || param === "-roles")
-          argsObj.rolesToClaim = currCmd;
-        if (param === "-c" || param === "-channel") {
-          const channelToSend = message.guild.channels.cache.find(
-            (el) => el.id === currCmd
-          );
-          argsObj.channelToSend = channelToSend;
+        if (Object.prototype.hasOwnProperty.call(Arguments, cmdToFind)) {
+          // test for valid arguments
+          let paramVal;
+          if (['channel', 'c', 'dupes', 'd'].includes(cmdToFind)) paramVal = parseCmd(param, message.content, true);
+          else if (['roles', 'r'].includes(cmdToFind)) {
+            paramVal = Arguments[cmdToFind](cmdToFind, message);
+          } else paramVal = parseCmd(param, message.content);
+          if (!paramVal) return message.inlineReply(`Missing options for argument: \`${param}\``);
+          Arguments[cmdToFind](param, message);
+        } else {
+          return message.inlineReply(`Invalid argument: \`${param}\``);
         }
       } catch (error) {
         console.log({ error });
-        return message.channel.send(
-          "Error executing command, check your syntax and try again."
-        );
+        return message.inlineReply(`Encountered an error while setting parameter: \`${cmdToFind || param}\`: ${error.message}`);
       }
     }
-    let msgStr = message.content.replace(/\\{/g, "#!#").replace(/\\}/g, "!#!");
-    let sliceStartIndex = msgStr.indexOf("{");
-    let sliceEndIndex = msgStr.indexOf("}", sliceStartIndex + 1);
 
-    if (
-      !(sliceStartIndex || sliceEndIndex) ||
-      sliceStartIndex === -1 ||
-      sliceEndIndex === -1
-    )
-      return message.channel.send("Unable to parse the message to send.");
-    if (!argsObj.hasOwnProperty("channelToSend"))
-      return message.channel.send("Invalid channel identifier");
-    argsObj.rolesToClaim.forEach((el, i) => {
-      let role = message.guild.roles.cache.find(
-        (role) => role.name.toLowerCase() === el.roleName.toLowerCase()
-      );
-      if (!role) return;
-      currObj = {
-        _id: role.id,
-        guild: role.guild.id,
-        roleId: role.id,
-        channel: argsObj.channelToSend.id,
-      };
-      argsObj.rolesToClaim[i] = { ...argsObj.rolesToClaim[i], ...currObj };
-    });
+    if (!argsObj.message?.channelToSend) return message.inlineReply('Invalid channel identifier');
 
-    // replace escaped sequences back to their proper symbols
-    argsObj.message.content = msgStr
-      .slice(sliceStartIndex + 1, sliceEndIndex - 1)
-      .replace(/#!#/g, "{")
-      .replace(/!#!/g, "}")
-      .trim();
-    let messageToSend = new MessageEmbed()
-      .setDescription("Confirm that you want to send the following message:")
-      .addFields(
-        {
-          name: argsObj.message.title,
-          value: argsObj.message.content,
-          inline: false,
-        },
-        {
-          name: "Channel",
-          value: argsObj.channelToSend,
-          inline: true,
-        },
-        {
-          name: "\u200b",
-          value: "\u200b",
-          inline: true,
-        },
-        {
-          name: "Role to ping",
-          value: argsObj.pingRole,
-          inline: true,
-        },
-        {
-          name: "Reaction",
-          value: argsObj.rolesToClaim.map((el) => el.reaction),
-          inline: true,
-        },
-        {
-          name: "\u200b",
-          value: "\u200b",
-          inline: true,
-        },
-        {
-          name: "Role",
-          value: argsObj.rolesToClaim.map((el) => `<@&${el.roleId}>`),
-          inline: true,
-        },
-        {
-          name: "Allow multiple roles?",
-          value: argsObj.allowDupes,
-          inline: false,
-        }
-      );
-    console.log({ argsObj }, argsObj.rolesToClaim);
-    messageToSend.setTitle("Confirm sending message");
-    let messageTest = await message.channel.send(messageToSend);
-    messageTest.react("✅"), messageTest.react("❌");
+    const embedFields = [
+      {
+        name: argsObj.message.title,
+        value: argsObj.message.content,
+        inline: false,
+      },
+      {
+        name: 'Channel to send',
+        value: argsObj.message.channelToSend,
+        inline: true,
+      },
+      {
+        name: '\u200b',
+        value: '\u200b',
+        inline: true,
+      },
+      {
+        name: 'Role to ping',
+        value: `${!argsObj.roleToPing.id ? 'None'
+          : argsObj?.roleToPing?.name === '@everyone' ? '@everyone'
+            : `<@&${argsObj?.roleToPing?.id}>`}`,
+        inline: true,
+      },
+      {
+        name: 'Reactions to watch',
+        value: argsObj.availableRoles.joinReactions('\n'),
+        inline: true,
+      },
+      {
+        name: '\u200b',
+        value: '\u200b',
+        inline: true,
+      },
+      {
+        name: 'Roles to assign',
+        value: argsObj.availableRoles.joinIDs('\n'),
+        inline: true,
+      },
+      {
+        name: 'Allow multiple roles?',
+        value: argsObj.allowDupes,
+        inline: false,
+      },
+    ];
+
+    const messageToSend = new MessageEmbed()
+      .setTitle('Confirm sending message')
+      .setDescription('Confirm that you want to send the following message:')
+      .addFields(...embedFields);
+    const messageTest = await message.inlineReply(messageToSend);
+    await messageTest.react('✅');
+    await messageTest.react('❌');
     const collector = messageTest.createReactionCollector((reaction, rUser) => {
       if (
-        !reaction.me &&
-        (reaction.emoji.name === "✅" || reaction.emoji.name === "❌")
+        !reaction.me
+        && (reaction.emoji.name === '✅' || reaction.emoji.name === '❌')
       ) {
         const user = message.guild.members.cache.find(
-          (member) => member.user.id === rUser.id
+          (member) => member.user.id === rUser.id,
         );
         try {
-          if (user.hasPermission("ADMINISTRATOR")) {
+          if (user.hasPermission('ADMINISTRATOR')) {
             if (user.id === message.author.id) return true;
           } else return false;
         } catch (e) {
@@ -178,73 +207,95 @@ module.exports = {
       return false;
     });
 
-    collector.on("collect", () => collector.stop());
-    collector.on("end", async (collected) => {
+    collector.on('collect', () => collector.stop());
+    collector.on('end', async (collected) => {
       switch (collected.first().emoji.name) {
-        case "✅": {
-          const dbConnection = await db();
-          try {
-            const finalMessage = await argsObj.channelToSend.send(
-              `${
-                argsObj.pingRole ? `<@&${argsObj.pingRole.id}> ` : undefined
-              }New question`,
-              new MessageEmbed()
-                .setTitle(argsObj.message.title)
-                .setDescription(argsObj.message.content)
-            );
-            const reactionListener = new ReactionListener({
-              _id: finalMessage.id,
-              guild: argsObj.channelToSend.guild.id,
-              message: {
-                _id: finalMessage.id,
-                id: finalMessage.id,
-                title: argsObj.message.title,
-                content: argsObj.message.content,
-                channel: argsObj.channelToSend.id,
-                author: {
-                  _id: message.author.id,
-                  id: message.author.id,
-                  tag: message.author.tag,
-                },
-              },
+        case '✅': {
+          const strTest = argsObj?.roleToPing?.name === '@everyone' ? '@everyone' : argsObj?.roleToPing.id;
+          const finalMessage = await argsObj.message.channelToSend.send(
+            `${strTest === '@everyone' ? `${strTest}, n`
+              : `${!argsObj.roleToPing.id}` ? 'N'
+                : `<@&${strTest}>, n`}ew survivor question:`,
+            new MessageEmbed()
+              .setTitle(argsObj.message.title)
+              .setDescription(argsObj.message.content),
+            {
+              split: true,
+              allowedMentions: { parse: ['roles', 'users', 'everyone'] },
+            },
+          );
+          const reactionListener = new ReactionListenerModel({
+            id: finalMessage.id,
+            guild: { name, id } = message.guild,
+            author: {
+              id: message.member.id,
+              guild: { name, id } = message.guild,
+              user: { id: message.author.id, tag: `${message.author.username}#${message.author.discriminator}` },
+            },
+            sentMessage: {
+              id: finalMessage.id,
+              title: argsObj.message.title,
+              content: argsObj.message.content,
               channel: {
-                _id: argsObj.channelToSend.id,
-                id: argsObj.channelToSend.id,
-                guild: argsObj.channelToSend.guild.id,
-                name: argsObj.channelToSend.name,
+                id: finalMessage.channel.id,
+                name: finalMessage.channel.name,
+                guild: { name, id } = finalMessage.guild,
               },
-              is_ongoing: true,
-              allow_dupes: argsObj.allowDupes,
-              roles: argsObj.rolesToClaim.map((role) => ({
-                _id: role._id,
-                id: role._id,
-                name: role.roleName,
-                guild: role.guild,
-                channel: role.channel,
-                reaction: role.reaction,
-              })),
-            });
-            argsObj.rolesToClaim.forEach((role) =>
-              finalMessage.react(role.reaction)
-            );
-            await reactionListener.save().then(console.log);
-            messageToSend.addField("Status", "Success");
+            },
+            channel: {
+              id: message.channel.id,
+              name: argsObj.message.channelToSend.name,
+              guild: { name, id } = message.guild,
+            },
+            message: {
+              id: message.id,
+              guild: { name, id } = message.guild,
+              channel: {
+                id: message.channel.id,
+                name: message.channel.name,
+                guild: { name, id } = message.guild,
+              },
+            },
+            roleToPing: argsObj.roleToPing,
+            // TODO: add logic to have multiple states for this
+            is_ongoing: true,
+            allow_dupes: argsObj.allowDupes,
+          });
+
+          argsObj.availableRoles
+            .forEach((v, k) => reactionListener.set(`availableRoles.${k}`, v));
+
+          const err = {
+            hasError: false,
+          };
+          await argsObj.availableRoles.forEach((role, reaction) => {
+            try {
+              finalMessage.react(reaction);
+            } catch (e) {
+              err.error = e;
+              err.hasError = true;
+            }
+          });
+          try {
+            messageToSend.addField('Status', 'Success');
             messageTest.edit(messageToSend);
+            await reactionListener.save();
           } catch (e) {
-            console.log({ e });
+            console.log('Error while saving to database:', { e });
+          }
+          if (err.hasError) {
+            console.log({ err });
             messageToSend.addField(
-              "Status",
-              "Error while sending message\n" + e
+              'Status',
+              `Error while sending message\n${err.error}`,
             );
             messageTest.edit(messageToSend);
-          } finally {
-            dbConnection.disconnect();
           }
           break;
         }
-        case "❌":
+        case '❌':
         default:
-          messageToSend.addField("Status", "Operation cancelled");
+          messageToSend.addField('Status', 'Operation cancelled');
           return messageTest.edit(messageToSend);
       }
     });

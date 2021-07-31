@@ -1,6 +1,6 @@
 {
   "name": "wang_bot",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "wangs",
   "main": "index.js",
   "repository": {
@@ -24,6 +24,9 @@
   "devDependencies": {
     "@types/mongodb": "^4.0.5",
     "@types/node": "^16.4.3",
-    "eslint": "^7.30.0"
+    "eslint": "^7.31.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.23.4"
   }
 }
