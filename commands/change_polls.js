@@ -3,14 +3,15 @@ const { ReactionListenerModel } = require('../models/Reaction');
 
 module.exports = {
   name: 'change_polls',
-  description: 'Changes a poll state running the selected poll.',
   aliases: [
     'change_poll', 'start_polls', 'start_poll',
     's_poll', 'end_polls', 'end_poll', 'e_poll',
     'ch_poll', 'ch_polls', 'chp', 'c_p'],
-  usage: '`.chp <-e|-enable|-d|-disable> https://discord.com/1234567890/0987654321/5647382910`',
+  description: 'Changes a poll state running the selected poll.',
+  usage: '-<e|enable|d|disable> <link to a message>',
+  example: '-e https://discord.com/1234567890/0987654321/5647382910',
   args: true,
-  async execute(message, args, db) {
+  async execute(message, args) {
     if (args.length < 2) return message.inlineReply('Missing parameters.');
     const enablePool = args.includes('-e') || args.includes('-enable');
     const disablePool = (!enablePool && (args.includes('-d') || args.includes('-disable')));

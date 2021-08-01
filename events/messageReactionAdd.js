@@ -1,4 +1,5 @@
 const ReactionListener = require('../models/Reaction');
+const Guild = require('../models/Guild');
 
 module.exports = {
   name: 'messageReactionAdd',
@@ -13,16 +14,23 @@ module.exports = {
       }
     }
     if (reaction.me) return;
-
+    const guildRole = await Guild.findOne({ id: reaction.message.guild.id });
     const messageQuery = await ReactionListener.findOne({ id: reaction.message.id, is_ongoing: true });
+    const { guild } = reaction.message;
+    const member = guild.members.cache.find((m) => m.user.id === user.id);
+    if (!member) return;
+
+    if (guildRole?.survivorRole?.id) {
+      if (!member.roles.cache.has(guildRole.survivorRole.id)) {
+        console.log('no role');
+        return;
+      }
+    }
     if (!messageQuery) return;
 
     if (messageQuery.availableRoles.has(reaction.emoji.name)) {
       // do Stuff
       const roleToApply = messageQuery.availableRoles.get(reaction.emoji.name);
-      const guild = await client.guilds.fetch(messageQuery.sentMessage.channel.guild.id);
-      const member = guild.members.cache.find((m) => m.user.id === user.id);
-      if (!member) return;
 
       if (messageQuery.allow_dupes) {
         try {

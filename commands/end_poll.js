@@ -1,11 +1,13 @@
 const { MessageEmbed } = require('discord.js');
+const { discordTimestamp } = require('../functions');
 const ReactionListener = require('../models/Reaction');
 
 module.exports = {
   name: 'end_poll',
-  description: 'End the linked poll and reply to the original message with the results.',
-  example: '-w \\`Role Name\\` "The correct answer was :one:" https://discord.com/channels/748581308866887691/811643995755249664/870896674149662800',
   aliases: ['ep', 'end_poll'],
+  description: 'End the linked poll and reply to the original message with the results.',
+  usage: '-<w|wr|winner|winner_role|c|cr|correct|correct_role></w> \\`<Role Name>\\` "<explanation text>" <link to a message>',
+  example: '-w \`Role Name\` "The correct answer was :one:" https://discord.com/channels/748581308866887691/811643995755249664/870896674149662800',
   args: true,
   async execute(message) {
     const argsRegex = message.content.match(/(?:-w|-wr|-winner|-winner_role|-c|-cr|-correct|correct_role)\s`(?<roleToFind>.+?)`\s(?:(?<delim>'|"|`|\?#|<|{)(?<msg>.+?)\k<delim>)\s(?:https:\/\/discord\.com\/channels\/(?<guild>\d+?)\/(?<channel>\d+?)\/(?<msgId>\d+?))$/);
@@ -20,7 +22,7 @@ module.exports = {
     const msgObj = await channelObj.messages.fetch(msgId);
 
     if (!guildObj) return message.inlineReply('Invalid data given for parameter `Discord link`.');
-    if (!roleObj) return message.inlineReply(`Role ${roleToFind} not found.`);
+    if (!roleObj) return message.inlineReply(`Role \`${roleToFind}\` not found.`);
     if (!channelObj) return message.inlineReply('Channel not found.');
     if (!msgObj) return message.inlineReply('Message not found.');
 
@@ -69,16 +71,15 @@ module.exports = {
           doc.is_ongoing = false;
           await doc.save();
           const newMessage = new MessageEmbed()
-            .setTitle(`${doc.sentMessage.title}: poll closed`)
+            .setTitle(`${doc.sentMessage.title}: poll closed (${discordTimestamp()})`)
             .setDescription(msg)
             .setTimestamp();
           const roleEmbeds = {};
           const memberCount = doc.userReactions.size;
-          await doc.availableRoles.forEach((v, k) => roleEmbeds[v.id] = {
-            name: v.name,
-            reaction: k,
-            playerList: [],
-          });
+          await doc.availableRoles.forEach((v, k) => (
+            roleEmbeds[v.id] = { name: v.name, reaction: k, playerList: [] }
+          ));
+
           doc.userReactions.forEach((v, k) => {
             const { role } = v;
             roleEmbeds[role]?.playerList?.push(`<@${k}>`);
@@ -108,7 +109,9 @@ module.exports = {
           msgToSend.addField('Status', 'Success');
           return messageTest.edit(msgToSend);
         }
-        case '❌':
+        case
+          '❌'
+          :
         default:
           msgToSend.addField('Status', 'Operation cancelled');
           return messageTest.edit(msgToSend);

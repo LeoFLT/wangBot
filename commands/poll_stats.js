@@ -3,9 +3,10 @@ const ReactionListener = require('../models/Reaction');
 
 module.exports = {
   name: 'poll_stats',
-  description: 'Show poll statistics for a message.',
-  example: 'https://discord.com/channels/748581308866887691/811643995755249664/870896674149662800',
   aliases: ['ps', 'poll_stat'],
+  description: 'Show poll statistics for a message.',
+  usage: '<link to a message>',
+  example: 'https://discord.com/channels/748581308866887691/811643995755249664/870896674149662800',
   args: true,
   async execute(message, args) {
     if (!args[0]) return message.inlineReply('No link provided');

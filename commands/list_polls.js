@@ -3,12 +3,14 @@ const ReactionListener = require('../models/Reaction');
 
 module.exports = {
   name: 'list_polls',
-  description: 'List all polls for the server. Use -a to show only active polls or -i to only show inactive polls.',
   aliases: ['lp', 'list_poll', 'lr', 'list_reaction', 'list_reactions'],
+  description: 'List all polls for the server. Use -a to show only active polls or -i to only show inactive polls.',
+  usage: '-<active|a|inactive|i>',
+  example: '-a',
   args: false,
   async execute(message, args) {
-    const queryActive = (args.length === 1 && args[0] === '-a') || false;
-    const queryInactive = (args.length === 1 && args[0] === '-i') || false;
+    const queryActive = args.length === 1 && (args[0] === '-a' || args[0] === '-active');
+    const queryInactive = args.length === 1 && (args[0] === '-i' || args[0] === '-inactive');
     let doc;
     try {
       const filter = { 'guild.id': message.guild.id };

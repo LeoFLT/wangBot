@@ -5,25 +5,23 @@ const { RoleList } = require('../classes');
 
 module.exports = {
   name: 'watch_for_reactions',
-  description: 'Listen to reactions to a message and assign roles based on it',
   aliases: ['wr', 'wfr', 'watch_reactions'],
-  args: true,
-  usesDb: true,
-  takesParameters: true,
+  description: 'Listen to reactions to a message and assign roles based on it',
   usage:
     '"<Message to send>" -<channel|c> <#channel> -<title|t> \\`<question title>\\` -<ping|p> \\`<role to ping>\\`¹²'
-    + ' -<dupes|d> <allow users to claim multiple roles (true|false)>² "<message content>"'
+    + ' -<dupes|d> <allow users to claim multiple roles (true|false)>²'
     + ' -<roles|r> <key value pairs corresponding to \\:emojis\\: and \\`roles\\` to assign>³*\n'
     + '¹: argument must be enclosed in ticks\n'
     + '²: optional\n'
     + '³: roles must be enclosed in ticks\n'
     + '*: must be the last parameter used',
   example:
-    '"My cool, Multiline and rich :money: text. Use ?# as a delimiter '
+    '"My cool, Multiline and rich :money_with_wings: text. Use ?# as a delimiter '
     + 'if you need special characters,\notherwise use one single or double quotes/single '
     + 'or triple ticks, or one of these templates:\n`< message <` `> message >` `{ message {` `} message }`.\nNote how everything up until now is still inside the message to send parameter."\n-c #announcements -t '
     + '`Question 1: Question title here` -p `Role To Ping` -d false '
     + '-r :one: `Role One` :two: `Role Two` :three: `Role Three`\n',
+  args: true,
   async execute(message) {
     if (!message.member.hasPermission('ADMINISTRATOR')) return;
     const messageStr = message.content.trim().split(/\s+/);

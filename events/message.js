@@ -6,7 +6,9 @@ module.exports = {
   once: false,
   async execute(message, client) {
     if (message.author.bot || message.channel instanceof DMChannel) return;
-    const guildPrefix = await GuildModel.findOne({ id: message.guild.id }) || process.env.PREFIX;
+    let findPrefix = await GuildModel.findOne({ id: message.guild.id });
+    if (!findPrefix) findPrefix = await new GuildModel({ id: message.guild.id }).save();
+    const guildPrefix = findPrefix.prefix;
     if (!message.content.startsWith(guildPrefix)) return;
     const args = message.content.slice(guildPrefix.length).trim().split(/\s+/);
     const commandName = args.shift().toLowerCase();
@@ -16,13 +18,14 @@ module.exports = {
     if (!command) return;
     if (command.args && !args.length) {
       let reply = 'No arguments were provided';
-      if (command.usage) reply += `\n**Usage:**\n\`\`\`${guildPrefix}${commandName} ${command.usage}\`\`\``;
-      if (command.example) reply += `\n**Example:**\n${guildPrefix}${commandName} ${command.example}`;
+      if (command.usage) reply += `\n**Usage:**\n\`\`\`${guildPrefix}${commandName} ${command.usage} \`\`\``;
+      if (command.example) reply += `\n**Example:**\n${guildPrefix}${commandName} ${command.example} `;
       return message.channel.send(reply);
     }
 
     try {
-      command.execute(message, args);
+      if (command.isHelp) command.execute(message, args, guildPrefix);
+      else command.execute(message, args, client);
     } catch (e) {
       console.error(`\n${new Date().toISOString()
         .replace('T', ' ')} - ERROR: commandName: ${commandName}\n`

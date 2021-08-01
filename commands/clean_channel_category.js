@@ -2,10 +2,11 @@ const { MessageEmbed } = require('discord.js');
 
 module.exports = {
   name: 'clean_channel_category',
-  description: 'Clean all messages from a channel category',
   aliases: ['ccc'],
-  args: true,
+  description: 'Clean all messages from a channel category',
   usage: '<channel category to purge>',
+  example: 'Channel Category',
+  args: true,
   async execute(message, args) {
     if (!message.member.hasPermission('ADMINISTRATOR')) return;
     const channelArr = [];

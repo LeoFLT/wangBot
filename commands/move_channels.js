@@ -4,9 +4,10 @@ module.exports = {
   name: 'move_channels',
   description: 'Move channels from one category to another',
   aliases: ['move', 'mc'],
-  args: true,
   usage:
     '<channel list, separated by commas (no spaces) or a channel category> <channel category to move the channels to>',
+  example: 'Brazil,Indonesia "Unused Countries"',
+  args: true,
   async execute(message, args) {
     if (!message.member.hasPermission('ADMINISTRATOR')) return;
     let channelsToMoveTest;

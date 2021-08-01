@@ -122,4 +122,7 @@ module.exports = {
     }));
     process.stdout.write(` (${messageCount} messages cached)\n`);
   },
+  discordTimestamp(dateObj) {
+    return `<t:${Math.floor(dateObj ? dateObj.getTime() / 1000 : Date.now() / 1000)}:R>`;
+  },
 };

@@ -1,9 +1,10 @@
 const ReactionListener = require('../models/Reaction');
+const Guild = require('../models/Guild');
 
 module.exports = {
   name: 'messageReactionRemove',
   once: false,
-  async execute(reaction, user, client) {
+  async execute(reaction, user, guildObj, client) {
     if (reaction.partial) {
       try {
         await reaction.fetch();
@@ -13,16 +14,22 @@ module.exports = {
       }
     }
     if (reaction.me) return;
+    const guildRole = await Guild.findOne({ id: reaction.message.guild.id });
+    const messageQuery = await ReactionListener.findOne({ id: reaction.message.id, is_ongoing: true });
+    const { guild } = reaction.message;
+    const member = guild.members.cache.find((m) => m.user.id === user.id);
+    if (!member) return;
 
-    const messageQuery = await ReactionListener
-      .findOne({ id: reaction.message.id, is_ongoing: true });
+    if (guildRole?.survivorRole?.id) {
+      if (!member.roles.cache.has(guildRole.survivorRole.id)) {
+        console.log('no role (remove)');
+        return;
+      }
+    }
     if (!messageQuery) return;
 
     if (messageQuery.availableRoles.has(reaction.emoji.name)) {
       const roleToRemove = messageQuery.availableRoles.get(reaction.emoji.name);
-      const guild = await client.guilds.fetch(messageQuery.sentMessage.channel.guild.id);
-      const member = guild.members.cache.find((m) => m.user.id === user.id);
-      if (!member) return;
       if (member.roles.cache.some((role) => role.id === roleToRemove.id)) return;
       await member.roles.remove(roleToRemove.id, `role from poll named '${
         messageQuery.sentMessage.title}' on #${

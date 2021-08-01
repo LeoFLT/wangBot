@@ -7,6 +7,10 @@ const GuildSchema = new Schema({
     default: '.',
     type: String,
   },
+  survivorRole: {
+    id: String,
+    name: String,
+  },
 });
 
 module.exports = model('DiscordGuild', GuildSchema);

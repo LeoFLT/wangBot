@@ -3,9 +3,10 @@ const ReactionListener = require('../models/Reaction');
 
 module.exports = {
   name: 'manage_polls',
-  description: 'Enable/disable polls for the server. Use -e to enable and -d to disable.',
-  example: '-e https://discord.com/channels/748581308866887691/811643995755249664/870896674149662800',
   aliases: ['mp', 'manage_poll'],
+  description: 'Enable/disable polls for the server. Use -e to enable and -d to disable.',
+  usage: '-<enable|e|disable|d> <link to a message>',
+  example: '-e https://discord.com/channels/748581308866887691/811643995755249664/870896674149662800',
   args: true,
   async execute(message, args) {
     let setEnabled;
