@@ -38,8 +38,8 @@ module.exports = {
 
     if (command.aliases.length > 0) messageToSend.addField('**Aliases**', command.aliases.join(', '), true);
     if (command.description) messageToSend.addField('**Description**', command.description, false);
-    if (command.usage) messageToSend.addField('**Usage**', `${prefix}${command.usage}`, false);
-    if (command.example) messageToSend.addField('**Example**', `${prefix}${command.example}`, false);
-    message.inlineReply(messageToSend);
+    if (command.usage) messageToSend.addField('**Usage**', `${prefix}${command.name} ${command.usage}`, false);
+    if (command.example) messageToSend.addField('**Example**', `${prefix}${command.name} ${command.example}`, false);
+    return message.inlineReply(messageToSend);
   },
 };

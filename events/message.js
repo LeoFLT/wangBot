@@ -17,10 +17,7 @@ module.exports = {
 
     if (!command) return;
     if (command.args && !args.length) {
-      let reply = 'No arguments were provided';
-      if (command.usage) reply += `\n**Usage:**\n\`\`\`${guildPrefix}${commandName} ${command.usage} \`\`\``;
-      if (command.example) reply += `\n**Example:**\n${guildPrefix}${commandName} ${command.example} `;
-      return message.channel.send(reply);
+      return client.commands.get('help').execute(message, [command.name], guildPrefix);
     }
 
     try {
