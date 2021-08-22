@@ -5,14 +5,7 @@ const { connect } = require('./db');
 require('./ExtendedMessage');
 
 const client = new Client({
-  partials: ['USER', 'MESSAGE', 'REACTION'],
-  presence: {
-    status: 'online',
-    activity: {
-      name: 'most of the time',
-      type: 'WATCHING',
-    },
-  },
+  partials: ['USER', 'MESSAGE', 'REACTION']
 });
 client.commands = new Collection();
 const commandFiles = fs.readdirSync('./commands').filter((file) => file.endsWith('.js'));
