@@ -39,4 +39,4 @@ MongoDB: `5.0.0+`
 `https://discord.com/api/oauth2/authorize?client_id=YOUR_APPLICATION_ID&permissions=2416363603&scope=bot`
     - The bot needs to have its highest role set as a role that is higher than the roles it will assign/remove others.
     
-Feel free to tweak the permissions for purposes, keep in mind, however, that not all features will work if you don't give it all the permissions listed on the link above (e.g. no Manage Channels permission will result in `move_channels` giving an error).
+Feel free to tweak the permissions for yourpurposes. Keep in mind, however, that not all features will work if you don't give it all the permissions listed on the link above (e.g. no Manage Channels permission will result in `move_channels` giving out an error).
