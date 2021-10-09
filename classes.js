@@ -1,7 +1,9 @@
 module.exports = {
   RoleList: class extends Map {
     addRole(reaction, obj) {
-      if (!this.get(reaction)) { this.set(reaction, obj); }
+      if (!this.get(reaction))
+        this.set(reaction, obj);
+      return reaction;
     }
 
     toArray() {

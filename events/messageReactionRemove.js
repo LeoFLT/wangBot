@@ -20,17 +20,25 @@ module.exports = {
     const member = guild.members.cache.find((m) => m.user.id === user.id);
     if (!member) return;
 
+    if (guildRole.rolesToWatch.has(reaction.message.id)) {
+      const roleToRemove = guildRole.rolesToWatch.get(reaction.message.id);
+      if (member.roles.cache.has(roleToRemove.id));
+        return member.roles.remove(roleToRemove.id);
+    }
+
     if (guildRole?.survivorRole?.id) {
       if (!member.roles.cache.has(guildRole.survivorRole.id)) {
-        console.log('no role (remove)');
         return;
       }
     }
     if (!messageQuery) return;
-
+  
     if (messageQuery.availableRoles.has(reaction.emoji.name)) {
       const roleToRemove = messageQuery.availableRoles.get(reaction.emoji.name);
-      if (member.roles.cache.some((role) => role.id === roleToRemove.id)) return;
+    
+      if (!member.roles.cache.some((role) => role.id === roleToRemove.id))
+        return;
+  
       await member.roles.remove(roleToRemove.id, `role from poll named '${
         messageQuery.sentMessage.title}' on #${
         messageQuery.sentMessage.channel.name} created by ${

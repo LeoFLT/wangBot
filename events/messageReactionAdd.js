@@ -20,9 +20,12 @@ module.exports = {
     const member = guild.members.cache.find((m) => m.user.id === user.id);
     if (!member) return;
 
+    if (guildRole.rolesToWatch.has(reaction.message.id)) {
+      const roleToAdd = guildRole.rolesToWatch.get(reaction.message.id);
+      return member.roles.add(roleToAdd.id);
+    }
     if (guildRole?.survivorRole?.id) {
       if (!member.roles.cache.has(guildRole.survivorRole.id)) {
-        console.log('no role');
         return;
       }
     }

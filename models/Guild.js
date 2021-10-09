@@ -11,6 +11,11 @@ const GuildSchema = new Schema({
     id: String,
     name: String,
   },
+  rolesToWatch: {
+    type: Map,
+    of: Object,
+    default: new Map(),
+  },
 });
 
 module.exports = model('DiscordGuild', GuildSchema);
