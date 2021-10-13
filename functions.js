@@ -43,6 +43,6 @@ module.exports = {
         dateFormat = 'R';
         break;
     }
-    return `<t:${Math.floor(dateObj ? dateObj.getTime() / 1000 : Date.now() / 1000)}:${dateFormat}>`;
+    return `<t:${Math.floor(dateObj ? (dateObj instanceof Date ? dateObj.getTime() / 1000 : typeof dateObj === "number" ? dateObj / 1000 : Date.now() / 1000) : Date.now() / 1000)}:${dateFormat}>`;
   },
 };

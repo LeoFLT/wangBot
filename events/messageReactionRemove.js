@@ -45,7 +45,7 @@ module.exports = {
         messageQuery.author.user.tag}`);
 
       messageQuery.userReactions
-        .set(member.id, { role: undefined, reaction: undefined });
+        .set(member.id, { role: undefined, reaction: undefined, date: Date.now() });
       await messageQuery.save();
     }
   },

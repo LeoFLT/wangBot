@@ -59,7 +59,7 @@ module.exports = {
           messageQuery.sentMessage.title}' on #${
           messageQuery.sentMessage.channel.name} created by ${
           messageQuery.author.user.tag}`);
-        messageQuery.userReactions.set(member.id, { role: roleToApply.id, reaction: reaction.emoji.name });
+        messageQuery.userReactions.set(member.id, { role: roleToApply.id, reaction: reaction.emoji.name, date: Date.now() });
         await messageQuery.save();
       }
     }
